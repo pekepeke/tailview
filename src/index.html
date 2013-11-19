@@ -34,12 +34,16 @@
 			}
 			#sidebar-inner {
 			}
+			#file-entries {
+				overflow: auto;
+			}
 			#tail {
 				display: table-cell;
 				padding: 0 5px 0 0;
 			}
 			#buffer {
 				overflow: auto;
+				font-size: 11px;
 				min-height: 300px;
 				max-height: 700px;
 			}
@@ -93,34 +97,39 @@
 					</p>
 				</div>
 				<div id="sidebar-inner">
+					<div class="form-group">
+						<input type="text" class="form-control" id="filename-filter" placeholder="filter entries">
+					</div>
+					<div id="file-entries" class="stick-window">
 <% config.files.forEach(function(item, i) { %>
-					<div class="panel-group" id="accordion">
-						<div class="panel panel-default">
-							<div class="panel-heading">
-								<h4 class="panel-title">
-									<a data-toggle="collapse" data-parent="#accordion" href="#collapse-<%= i %>">
-										<%= item.name %>
-									</a>
-								</h4>
-							</div>
-							<div id="collapse-<%= i %>" class="panel-collapse collapse">
-								<div class="panel-body">
-									<ul class="list-unstyled">
+						<div class="panel-group" id="accordion">
+							<div class="panel panel-default">
+								<div class="panel-heading">
+									<h4 class="panel-title">
+										<a data-toggle="collapse" data-parent="#accordion" href="#collapse-<%= i %>">
+											<%= item.name %>
+										</a>
+									</h4>
+								</div>
+								<div id="collapse-<%= i %>" class="panel-collapse collapse">
+									<div class="panel-body">
+										<ul class="list-unstyled">
 								<% item.logFiles.forEach(function(item) { %>
-										<li data-log-path="<%=  item.filename %>"><i class="glyphicon glyphicon-file"></i><a href="" ><%= item.label %></a></li>
+											<li data-log-path="<%=  item.filename %>"><i class="glyphicon glyphicon-file"></i><a href="" ><%= item.label %></a></li>
 								<% }); %>
-									</ul>
+										</ul>
+									</div>
 								</div>
 							</div>
 						</div>
-					</div>
 <% }); %>
+					</div>
 				</div>
 			</div><!-- /#sidebar -->
 
 			<div id="tail">
 				<div id="message" class="alert alert-warning">No file open yet</div>
-				<pre id="buffer"></pre>
+				<pre id="buffer" class="stick-window"></pre>
 			</div>
 		</div>
 
@@ -149,7 +158,7 @@
 					.is(':checked');
 
 				socket.on('connected', function(data) {
-					if (selected != "") {
+					if (selected != "" && selected != null) {
 						startWatch(selected);
 					}
 				});
@@ -162,16 +171,12 @@
 					$buf.html('');
 					$buf.append(join(data.text, "\n"));
 					// autoscroll
-					if (autoscroll) {
-						$buf.trigger('autoscroll');
-					}
+					$buf.trigger('autoscroll');
 				});
 				socket.on('continue', function(data) {
 					$buf.append(join(data.text, "\n"));
 					// autoscroll
-					if (autoscroll) {
-						$buf.trigger('autoscroll');
-					}
+					$buf.trigger('autoscroll');
 				})
 				socket.on('reset', function(data) {
 					$buf.html('');
@@ -186,24 +191,41 @@
 
 				function startWatch(filename) {
 					if (filename != null && filename != '') {
-						$brand.text(filename)
 						socket.emit('openFile', {filename: filename});
 					} else {
 						$msg.show().text('filename is not found.');
 					}
 				}
+
 				$buf.on('autoscroll', function() {
-					var $that = $(this);
-					$that.scrollTop($that.prop('scrollHeight'));
+					if (autoscroll) {
+						var $that = $(this);
+						$that.scrollTop($that.prop('scrollHeight'));
+					}
 				});
+
 				$clear.on('click', function() {
 					$buf.html('');
 					return false;
 				});
+
 				$marker.on('click', function() {
 					$buf.append('<hr class="red"/>');
+					$buf.trigger('autoscroll');
 					return false;
 				});
+
+				$('#filename-filter').on('keyup', function() {
+					var s = $(this).val();
+					$('#sidebar-inner li').each(function() {
+						if ($(this).text().match(s)) {
+							$(this).show();
+						} else {
+							$(this).hide();
+						}
+					});
+				});
+
 				$('#sidebar-toggle').on('click', function() {
 					var $sidebar_ctl = $('#sidebar-control i');
 					var opened_classes = 'glyphicon-chevron-left'
@@ -219,16 +241,25 @@
 					}
 					return false;
 				});
+
 				$('[data-log-path]').on('click', function() {
 					var $that = $(this)
 					startWatch($that.data('log-path'));
+					$brand.text($that.text())
+					$('[data-log-path]').find('i').removeClass('glyphicon-transfer').addClass('glyphicon-file')
+					$that.find('i').removeClass('glyphicon-file').addClass('glyphicon-transfer')
 					return false;
 				});
+
 				$(window).on('resize', function() {
-					$('#buffer').css({
-						'max-height': ($(window).height() - 100) + "px"
-					})
+					$('.stick-window').each(function() {
+						var $that = $(this);
+						$that.css({
+							'max-height': ($(window).height() - $that.offset().top - 30) + "px"
+						});
+					});
 				}).trigger('resize');
+
 			}(jQuery, this);
 		//]]></script>
 </body>

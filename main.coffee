@@ -11,7 +11,7 @@ if not config
     port: 8081
 config.port = 8081 unless config.port
 config.files = [] unless config.files
-config.maxBufSize = 5000 unless config.maxBufSize
+config.maxBufSize = 50000 unless config.maxBufSize
 max_bufsize = config.maxBufSize
 
 handler = (req, res) ->
@@ -40,6 +40,7 @@ io = socket_io.listen(app, {log:false})
 io.sockets.on 'connection', (socket) ->
   socket.emit('connected')
   watcher = null
+  cur_fsize = 0
 
   socket.on 'openFile', (data) ->
     return if not data.filename?
@@ -61,12 +62,14 @@ io.sockets.on 'connection', (socket) ->
 
       stream.addListener 'error', (err) ->
         socket.emit 'error', err.toString()
+
       stream.addListener 'data', (fdata) ->
         fdata = fdata.toString('utf-8')
         if (fdata.length > max_bufsize)
           lines = fdata.slice(fdata.indexOf("\n") + 1).split("\n")
         else
           lines = fdata.split("\n")
+
         socket.emit('initialize', {
           text: lines
           filename: data.filename
@@ -75,6 +78,7 @@ io.sockets.on 'connection', (socket) ->
         console.log('stated watching:' + data.filename)
 
   watch_start = (filename, socket) ->
+    org_fsize = 0
     watcher = fs.watch filename, (ev) ->
       fs.stat filename, (err, stat) ->
         if err
@@ -87,10 +91,15 @@ io.sockets.on 'connection', (socket) ->
           return
 
         stream = fs.createReadStream(filename, { start: cur_fsize, end: stat.size})
+        org_fsize = cur_fsize
+        cur_fsize = stat.size
+
         stream.addListener 'error', (err) ->
           socket.emit('error', err.toString())
+          cur_fsize = org_fsize
+
         stream.addListener 'data', (fdata) ->
           socket.emit('continue', {
             text: fdata.toString('utf-8').split("\n")
           })
-          cur_fsize = stat.size
+          # cur_fsize = stat.size

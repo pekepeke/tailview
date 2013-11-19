@@ -1,6 +1,6 @@
 {
   "port": 8081,
-  "maxBufSize" : 5000,
+  "maxBufSize" : 50000,
   "files": [{
     "name": "syslog",
     "path": "/var/log/*.log"
