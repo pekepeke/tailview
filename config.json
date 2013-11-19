@@ -1,0 +1,8 @@
+{
+  "port": 8081,
+  "maxBufSize" : 5000,
+  "files": [{
+    "name": "syslog",
+    "path": "/var/log/*.log"
+  }]
+}

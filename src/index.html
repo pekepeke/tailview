@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta name="description" content="">
+		<meta name="author" content="">
+		<meta name="robots" content="noindex, nofollow"/>
+
+		<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
+		<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap-theme.min.css">
+		<style>
+			body {
+				padding-top: 60px;
+				padding-bottom: 30px;
+				word-break: break-all;
+			}
+			#body {
+				width: 100%;
+				display: table;
+			}
+			#sidebar {
+				display: table-cell;
+				padding: 0 15px 0 15px;
+				width: 250px;
+				transition: width .2s linear 0;
+			}
+			#sidebar.closed {
+			width: 30px;
+			}
+			#sidebar-control {
+				overflow: hidden;
+			}
+			#sidebar-inner {
+			}
+			#tail {
+				display: table-cell;
+				padding: 0 5px 0 0;
+			}
+			#buffer {
+				overflow: auto;
+				min-height: 300px;
+				max-height: 700px;
+			}
+			.red {
+				border-top: 1px solid #f55;
+			}
+		</style>
+
+	</head>
+	<body>
+		<div class="navbar navbar-fixed-top navbar-inverse" role="navigation">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a id="brand" class="navbar-brand" href="#">TailView</a>
+				</div>
+
+				<div class="collapse navbar-collapse">
+					<!-- <ul class="nav navbar-nav"> -->
+					<!-- 	<li class="active"><a href="#">Home</a></li> -->
+					<!-- 	<li><a href="#about">About</a></li> -->
+					<!-- 	<li><a href="#contact">Contact</a></li> -->
+					<!-- </ul> -->
+          <form class="navbar-form navbar-right" action="">
+            <div class="form-group">
+							<button id="marker" class="btn btn-danger btn-normal">Marker</button>
+							<button id="clear" class="btn btn-info btn-normal">Clear</button>
+							<div class="checkbox">
+								<label>
+									<input id="autoscroll" type="checkbox" checked="checked"><span class="text-muted"> AutoScroll </span>
+								</label>
+							</div>
+            </div>
+					</form>
+				</div><!-- /.nav-collapse -->
+			</div><!-- /.container -->
+		</div><!-- /.navbar -->
+
+		<div id="body">
+			<div id="sidebar">
+				<div id="sidebar-control">
+					<p class="pull-right">
+						<button type="button" class="btn btn-default btn-xs" id="sidebar-toggle">
+							<i class="glyphicon glyphicon-chevron-left"></i>
+						</button>
+					</p>
+				</div>
+				<div id="sidebar-inner">
+<% config.files.forEach(function(item, i) { %>
+					<div class="panel-group" id="accordion">
+						<div class="panel panel-default">
+							<div class="panel-heading">
+								<h4 class="panel-title">
+									<a data-toggle="collapse" data-parent="#accordion" href="#collapse-<%= i %>">
+										<%= item.name %>
+									</a>
+								</h4>
+							</div>
+							<div id="collapse-<%= i %>" class="panel-collapse collapse">
+								<div class="panel-body">
+									<ul class="list-unstyled">
+								<% item.logFiles.forEach(function(item) { %>
+										<li data-log-path="<%=  item.filename %>"><i class="glyphicon glyphicon-file"></i><a href="" ><%= item.label %></a></li>
+								<% }); %>
+									</ul>
+								</div>
+							</div>
+						</div>
+					</div>
+<% }); %>
+				</div>
+			</div><!-- /#sidebar -->
+
+			<div id="tail">
+				<div id="message" class="alert alert-warning">No file open yet</div>
+				<pre id="buffer"></pre>
+			</div>
+		</div>
+
+		<div class="container">
+		</div> <!-- /container -->
+
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+		<script src="//netdna.bootstrapcdn.com/bootstrap/3.0.2/js/bootstrap.min.js"></script>
+		<script src="/socket.io/socket.io.js"></script>
+		<!--[if lt IE 9]>
+		<script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+		<script src="//css3-mediaqueries-js.googlecode.com/svn/trunk/css3-mediaqueries.js"></script>
+		<![endif]-->
+		<script>//<![[CDATA[
+			!function($, Global) {
+				var socket = io.connect(null)// io.connect(null, default_port)
+					, $win = $('#tail')
+					, $buf = $('#buffer')
+					, $msg = $('#message')
+					, $brand = $('#brand')
+					, $clear = $('#clear')
+					, $marker = $('#marker')
+					, selected = null;
+				var autoscroll = $('#autoscroll')
+					.on('change', function() { autoscroll = $(this).is(':checked'); })
+					.is(':checked');
+
+				socket.on('connected', function(data) {
+					if (selected != "") {
+						startWatch(selected);
+					}
+				});
+				socket.on('error', function(data) {
+					$buf.html('');
+					$msg.show().text(data)
+				});
+				socket.on('initialize', function(data) {
+					$msg.hide();
+					$buf.html('');
+					$buf.append(join(data.text, "\n"));
+					// autoscroll
+					if (autoscroll) {
+						$buf.trigger('autoscroll');
+					}
+				});
+				socket.on('continue', function(data) {
+					$buf.append(join(data.text, "\n"));
+					// autoscroll
+					if (autoscroll) {
+						$buf.trigger('autoscroll');
+					}
+				})
+				socket.on('reset', function(data) {
+					$buf.html('');
+				});
+
+				function join(text, delim) {
+					if (text instanceof Array) {
+						return text.join(delim)
+					}
+					return text;
+				}
+
+				function startWatch(filename) {
+					if (filename != null && filename != '') {
+						$brand.text(filename)
+						socket.emit('openFile', {filename: filename});
+					} else {
+						$msg.show().text('filename is not found.');
+					}
+				}
+				$buf.on('autoscroll', function() {
+					var $that = $(this);
+					$that.scrollTop($that.prop('scrollHeight'));
+				});
+				$clear.on('click', function() {
+					$buf.html('');
+					return false;
+				});
+				$marker.on('click', function() {
+					$buf.append('<hr class="red"/>');
+					return false;
+				});
+				$('#sidebar-toggle').on('click', function() {
+					var $sidebar_ctl = $('#sidebar-control i');
+					var opened_classes = 'glyphicon-chevron-left'
+					, closed_classes = 'glyphicon-chevron-right';
+					if ($('#sidebar-inner').toggle().is(':visible')) {
+						$('#sidebar').removeClass('closed');
+						$sidebar_ctl.addClass(opened_classes)
+							.removeClass(closed_classes)
+					} else {
+						$('#sidebar').addClass('closed');
+						$sidebar_ctl.removeClass(opened_classes)
+							.addClass(closed_classes)
+					}
+					return false;
+				});
+				$('[data-log-path]').on('click', function() {
+					var $that = $(this)
+					startWatch($that.data('log-path'));
+					return false;
+				});
+				$(window).on('resize', function() {
+					$('#buffer').css({
+						'max-height': ($(window).height() - 100) + "px"
+					})
+				}).trigger('resize');
+			}(jQuery, this);
+		//]]></script>
+</body>
+</html>

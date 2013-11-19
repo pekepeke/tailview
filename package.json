@@ -1,0 +1,17 @@
+{
+  "name": "tailview",
+  "version": "0.0.0",
+  "description": "",
+  "main": "main.coffee",
+  "dependencies": {
+    "coffee-script": "~1.6.3",
+    "socket.io": "~0.9.16",
+    "ejs": "~0.8.4",
+    "glob": "~3.2.7"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "BSD-2-Clause"
+}
