@@ -3,16 +3,23 @@ fs = require('fs')
 ejs = require('ejs')
 socket_io = require('socket.io')
 glob = require('glob')
-config = require('./config.json')
+config = null
 max_bufsize = null
 
-if not config
-  config =
-    port: 8081
-config.port = 8081 unless config.port
-config.files = [] unless config.files
-config.maxBufSize = 50000 unless config.maxBufSize
-max_bufsize = config.maxBufSize
+readConfig = ->
+  # config = require('./config')
+  if fs.existsSync "./config.json"
+    config = JSON.parse(fs.readFileSync('./config.json'))
+  if not config
+    config =
+      port: 8081
+  config.port = 8081 unless config.port
+  config.files = [] unless config.files
+  config.maxBufSize = 50000 unless config.maxBufSize
+  max_bufsize = config.maxBufSize
+  config
+
+readConfig()
 
 handler = (req, res) ->
   fs.readFile __dirname + '/src/index.html', "utf8", (err, data) ->
@@ -20,7 +27,7 @@ handler = (req, res) ->
       res.writeHead(500)
       return res.end('Error loading html')
 
-    config.files.map (item) ->
+    readConfig().files.map (item) ->
       base = item.path.replace(/\*.*$/, '')
       files = glob.sync(item.path)
       item.logFiles = files.map (v) ->
