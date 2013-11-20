@@ -50,6 +50,89 @@
 			.red {
 				border-top: 1px solid #f55;
 			}
+			.spinner {
+				display: inline-block;
+			}
+
+			.has-spinner.active {
+				cursor:progress;
+			}
+
+			.has-spinner.active .spinner {
+				animation-name: spinner;
+				animation-duration: 1.0s;
+				animation-iteration-count: infinite;
+				animation-timing-function: linear;
+				-moz-animation-name: spinner;
+				-moz-animation-duration: 1.0s;
+				-moz-animation-iteration-count: infinite;
+				-moz-animation-timing-function: linear;
+				-webkit-animation-name: spinner;
+				-webkit-animation-duration: 1.0s;
+				-webkit-animation-iteration-count: infinite;
+				-webkit-animation-timing-function: linear;
+				-ms-animation-name: spinner;
+				-ms-animation-duration: 1.0s;
+				-ms-animation-iteration-count: infinite;
+				-ms-animation-timing-function: linear;
+			}
+			@-moz-keyframes spinner {
+				from {
+					transform: rotate(0deg);
+					-webkit-transform: rotate(0deg);
+					-moz-transform: rotate(0deg);
+					-ms-transform: rotate(0deg);
+				}
+				to {
+					transform: rotate(360deg);
+					-webkit-transform: rotate(360deg);
+					-moz-transform: rotate(360deg);
+					-ms-transform: rotate(360deg);
+				}
+			}
+			@-webkit-keyframes spinner {
+				from {
+					transform: rotate(0deg);
+					-webkit-transform: rotate(0deg);
+					-moz-transform: rotate(0deg);
+					-ms-transform: rotate(0deg);
+				}
+				to {
+					transform: rotate(360deg);
+					-webkit-transform: rotate(360deg);
+					-moz-transform: rotate(360deg);
+					-ms-transform: rotate(360deg);
+				}
+			}
+			@-ms-keyframes spinner {
+				from {
+					transform: rotate(0deg);
+					-webkit-transform: rotate(0deg);
+					-moz-transform: rotate(0deg);
+					-ms-transform: rotate(0deg);
+				}
+				to {
+					transform: rotate(360deg);
+					-webkit-transform: rotate(360deg);
+					-moz-transform: rotate(360deg);
+					-ms-transform: rotate(360deg);
+				}
+			}
+			@keyframes spinner {
+				from {
+					transform: rotate(0deg);
+					-webkit-transform: rotate(0deg);
+					-moz-transform: rotate(0deg);
+					-ms-transform: rotate(0deg);
+				}
+				to {
+					transform: rotate(360deg);
+					-webkit-transform: rotate(360deg);
+					-moz-transform: rotate(360deg);
+					-ms-transform: rotate(360deg);
+				}
+			}
+
 		</style>
 
 	</head>
@@ -115,7 +198,7 @@
 									<div class="panel-body">
 										<ul class="list-unstyled">
 								<% item.logFiles.forEach(function(item) { %>
-											<li data-log-path="<%=  item.filename %>"><i class="glyphicon glyphicon-file"></i><a href="" ><%= item.label %></a></li>
+											<li data-log-path="<%=  item.filename %>" class="has-spinner"><span class="spinner"><i class="glyphicon glyphicon-file"></i></span><a href="" ><%= item.label %></a></li>
 								<% }); %>
 										</ul>
 									</div>
@@ -156,6 +239,7 @@
 				var autoscroll = $('#autoscroll')
 					.on('change', function() { autoscroll = $(this).is(':checked'); })
 					.is(':checked');
+				var setFilename = null;
 
 				socket.on('connected', function(data) {
 					if (selected != "" && selected != null) {
@@ -172,6 +256,7 @@
 					$buf.append(join(data.text, "\n"));
 					// autoscroll
 					$buf.trigger('autoscroll');
+					setFilename();
 				});
 				socket.on('continue', function(data) {
 					$buf.append(join(data.text, "\n"));
@@ -229,7 +314,7 @@
 				$('#sidebar-toggle').on('click', function() {
 					var $sidebar_ctl = $('#sidebar-control i');
 					var opened_classes = 'glyphicon-chevron-left'
-					, closed_classes = 'glyphicon-chevron-right';
+						, closed_classes = 'glyphicon-chevron-right';
 					if ($('#sidebar-inner').toggle().is(':visible')) {
 						$('#sidebar').removeClass('closed');
 						$sidebar_ctl.addClass(opened_classes)
@@ -244,10 +329,21 @@
 
 				$('[data-log-path]').on('click', function() {
 					var $that = $(this)
+					$that.addClass('active')
+						.find('i')
+						.removeClass('glyphicon-file')
+						.addClass('glyphicon-refresh');
+
+					setFilename = function() {
+						$brand.text($that.text())
+						$('[data-log-path]')
+							.removeClass('active')
+							.find('i')
+								.removeClass('glyphicon-transfer').removeClass('glyphicon-refresh')
+								.addClass('glyphicon-file')
+						$that.find('i').removeClass('glyphicon-file').addClass('glyphicon-transfer')
+					};
 					startWatch($that.data('log-path'));
-					$brand.text($that.text())
-					$('[data-log-path]').find('i').removeClass('glyphicon-transfer').addClass('glyphicon-file')
-					$that.find('i').removeClass('glyphicon-file').addClass('glyphicon-transfer')
 					return false;
 				});
 
