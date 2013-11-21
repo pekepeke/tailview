@@ -1,4 +1,6 @@
 http = require('http')
+url = require('url')
+path = require('path')
 fs = require('fs')
 ejs = require('ejs')
 socket_io = require('socket.io')
@@ -22,10 +24,41 @@ readConfig = ->
 readConfig()
 
 handler = (req, res) ->
-  fs.readFile __dirname + '/src/index.html', "utf8", (err, data) ->
+  uri = url.parse(req.url).pathname
+  filename = path.join(__dirname, "src", uri)
+  exts =
+    ".html": "text/html"
+    ".css": "text/css"
+    ".js": "text/javascript"
+    ".ico": "image/x-icon"
+
+  unless fs.existsSync(filename)
+    response.writeHead(404, {"Content-Type": "text/plain"})
+    response.write("404 Not Found\n")
+    response.end()
+    return
+
+  filename += "/index.html" if fs.statSync(filename).isDirectory()
+
+  unless filename.match(/\.html?$/)
+    fs.readFile filename, "binary", (err, file) ->
+      if err
+        res.writeHead(500, {"Content-Type": "text/plain"})
+        res.end(err + "\n")
+        return
+      headers = {}
+      content_type = exts[path.extname(filename)];
+      headers["Content-Type"] = content_type if content_type?
+      res.writeHead(200, headers)
+      res.write(file, "binary")
+      res.end()
+      return
+    return
+
+  fs.readFile filename, "utf8", (err, data) ->
     if err
       res.writeHead(500)
-      return res.end('Error loading html')
+      return res.end("Error loading html: #{err}\n" )
 
     readConfig().files.map (item) ->
       base = item.path.replace(/\*.*$/, '')
