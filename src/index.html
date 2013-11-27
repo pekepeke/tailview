@@ -43,11 +43,13 @@
 				display: table-cell;
 				padding: 0 5px 0 0;
 			}
-			#buffer {
+			#buffer-window {
 				overflow: auto;
-				font-size: 11px;
 				min-height: 300px;
 				max-height: 700px;
+			}
+			#buffer {
+				font-size: 11px;
 			}
 			.red {
 				border-top: 1px solid #f55;
@@ -219,7 +221,9 @@
 
 			<div id="tail">
 				<div id="message" class="alert alert-warning">No file open yet</div>
-				<pre id="buffer" class="stick-window"></pre>
+				<div id="buffer-window" class="stick-window">
+					<pre id="buffer"></pre>
+				</div>
 			</div>
 		</div>
 
@@ -364,18 +368,25 @@
 					});
 					$wrap.triggerHandler('change');
 				}).triggerHandler('resize');
+				var $bufwin = $('#buffer-window');
 				$wrap.on('change', function() {
 					if ($(this).is(':checked')) {
-						$buf.css({
-							'white-space': '',
+						$bufwin.css({
+							// 'white-space': '',
 							'overflow-x': '',
 							'width': ''
 						});
-					} else {
 						$buf.css({
-							'white-space': 'pre',
+							"width": ''
+						});
+					} else {
+						$bufwin.css({
+							// 'white-space': 'pre',
 							'overflow-x': 'scroll',
 							'width': $(window).width() - 275
+						});
+						$buf.css({
+							"width": 5000
 						});
 					}
 				}).triggerHandler('change')
