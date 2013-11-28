@@ -17,7 +17,7 @@ readConfig = ->
       port: 8081
   config.port = 8081 unless config.port
   config.files = [] unless config.files
-  config.maxBufSize = 50000 unless config.maxBufSize
+  config.maxBufSize = 5000 unless config.maxBufSize
   max_bufsize = config.maxBufSize
   config
 
