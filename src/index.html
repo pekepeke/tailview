@@ -248,6 +248,7 @@
 					, $marker = $('#marker')
 					, $wrap = $('#wrap')
 					, selected = null;
+				var $bufwin = $('#buffer-window');
 				var autoscroll = $('#autoscroll')
 					.on('change', function() { autoscroll = $(this).is(':checked'); })
 					.is(':checked');
@@ -296,7 +297,7 @@
 
 				$buf.on('autoscroll', function() {
 					if (autoscroll) {
-						var $that = $(this);
+						var $that = $bufwin;
 						$that.scrollTop($that.prop('scrollHeight'));
 					}
 				});
@@ -368,7 +369,7 @@
 					});
 					$wrap.triggerHandler('change');
 				}).triggerHandler('resize');
-				var $bufwin = $('#buffer-window');
+
 				$wrap.on('change', function() {
 					if ($(this).is(':checked')) {
 						$bufwin.css({
