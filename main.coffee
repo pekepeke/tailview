@@ -33,9 +33,9 @@ handler = (req, res) ->
     ".ico": "image/x-icon"
 
   unless fs.existsSync(filename)
-    response.writeHead(404, {"Content-Type": "text/plain"})
-    response.write("404 Not Found\n")
-    response.end()
+    res.writeHead(404, {"Content-Type": "text/plain"})
+    res.write("404 Not Found\n")
+    res.end()
     return
 
   filename += "/index.html" if fs.statSync(filename).isDirectory()
